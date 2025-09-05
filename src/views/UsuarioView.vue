@@ -13,6 +13,8 @@
     <p v-if="senha.length < 5">Senha muito curta!</p>
     <p v-else>Senha ok!</p>
     <button @click="inserirUsuario">Cadastrar</button>
+    <button @click="atualizar">Atualizar</button>
+    <p v-if="erro">{{ erro }}</p>
     <table>
       <thead>
         <tr>
@@ -32,6 +34,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import axios from 'axios'
+import { onMounted } from 'vue'
 
 interface usuario {
   id?: number
@@ -41,7 +45,7 @@ interface usuario {
 
 const nome = ref<string>('Teste')
 const senha = ref<string>('123')
-const cont = ref<number>(3)
+const erro = ref<string>()
 
 const usuarios = ref<usuario[]>([
   {
@@ -56,9 +60,26 @@ const usuarios = ref<usuario[]>([
   },
 ])
 
-function inserirUsuario() {
-  usuarios.value.push({ id: cont.value++, nome: nome.value, senha: senha.value })
-  nome.value = ''
-  senha.value = ''
+async function inserirUsuario() {
+  try {
+    await axios.post('usuario', {
+      nome: nome.value,
+      senha: senha.value,
+    })
+    atualizar()
+    nome.value = ''
+    senha.value = ''
+    erro.value = undefined
+  } catch (e) {
+    erro.value = (e as Error).message
+  }
 }
+
+async function atualizar() {
+  usuarios.value = (await axios.get('usuario')).data
+}
+
+onMounted(() => {
+  atualizar()
+})
 </script>
